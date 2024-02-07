@@ -1,13 +1,17 @@
 # https://github.com/vinceecws/SegNet_PyTorch/blob/master/CamVid/SegNet.py
 
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+EPOCHS = 10
+LEARNING_RATE = 1E-2
+MOMENTUM = 0.9
 
 class SegNet(nn.Module):
 
-    def __init__(self, in_chn=3, out_chn=32, BN_momentum=0.5):
+    def __init__(self, in_chn=3, out_chn=3, BN_momentum=0.5):
         super(SegNet, self).__init__()
 
         #SegNet Architecture
@@ -176,9 +180,9 @@ class Train():
     def Train(trainloader, path=None): #epochs is target epoch, path is provided to load saved checkpoint
 
         model = SegNet()
-        optimizer = optim.SGD(model.parameters(), lr=hyperparam.lr, momentum=hyperparam.momentum)
+        optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
         loss_fn = nn.CrossEntropyLoss()
-        run_epoch = hyperparam.epochs
+        run_epoch = EPOCHS
 
         if path == None:
             epoch = 0
