@@ -1,12 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 import segmentation_models_pytorch as smp
 import segmentation_models_pytorch.utils
 from segmentation_models_pytorch.encoders import get_preprocessing_fn
-
 from dataset import GrapheneDataset, post_process_mask_prediction
 
 EPOCHS = 40
@@ -35,9 +33,9 @@ if __name__ == '__main__':
         classes=3,                      # model output channels (number of classes in your dataset)
     )
 
-    train_graphene_dataset = GrapheneDataset(x_train_dir, y_train_dir)      #, classes=['SUBSTRATE', 'MONO-LAYER', 'MULTI-LAYER'])
-    val_graphene_dataset   = GrapheneDataset(x_val_dir, y_val_dir)            #, classes=['SUBSTRATE', 'MONO-LAYER', 'MULTI-LAYER'])
-    test_graphene_dataset  = GrapheneDataset(x_test_dir, y_test_dir)         #, classes=['SUBSTRATE', 'MONO-LAYER', 'MULTI-LAYER'])
+    train_graphene_dataset = GrapheneDataset(x_train_dir, y_train_dir)
+    val_graphene_dataset   = GrapheneDataset(x_val_dir, y_val_dir)
+    test_graphene_dataset  = GrapheneDataset(x_test_dir, y_test_dir)
 
     train_graphene_dataloader = DataLoader(train_graphene_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_graphene_dataloader = DataLoader(val_graphene_dataset, batch_size=BATCH_SIZE, shuffle=True)
@@ -54,39 +52,37 @@ if __name__ == '__main__':
         dict(params=model.parameters(), lr=0.0001),
     ])
 
-    # train_epoch = smp.utils.train.TrainEpoch(
-        # model, 
-        # loss=loss, 
-        # metrics=metrics, 
-        # optimizer=optimizer,
-        # device=DEVICE,
-        # verbose=True,
-    # )
-# 
-    # valid_epoch = smp.utils.train.ValidEpoch(
-        # model, 
-        # loss=loss, 
-        # metrics=metrics, 
-        # device=DEVICE,
-        # verbose=True,
-    # )
-# 
     # Train
-    # for i in range(0, EPOCHS):
-        # 
-        # print('\nEpoch: {}'.format(i))
-        # train_logs = train_epoch.run(train_graphene_dataloader)
-        # valid_logs = valid_epoch.run(val_graphene_dataloader)
-        # 
-        # do something (save model, change lr, etc.)
-        # if max_score < valid_logs['iou_score']:
-            # max_score = valid_logs['iou_score']
-            # torch.save(model, './best_model.pth')
-            # print('Model saved!')
-            # 
-        # if i == 25:
-            # optimizer.param_groups[0]['lr'] = 1e-5
-            # print('Decrease decoder learning rate to 1e-5!')
+    train_epoch = smp.utils.train.TrainEpoch(
+        model, 
+        loss=loss, 
+        metrics=metrics, 
+        optimizer=optimizer,
+        device=DEVICE,
+        verbose=True,
+    )
+
+    valid_epoch = smp.utils.train.ValidEpoch(
+        model, 
+        loss=loss, 
+        metrics=metrics, 
+        device=DEVICE,
+        verbose=True,
+    )
+
+    for i in range(0, EPOCHS):
+        print('\nEpoch: {}'.format(i))
+        train_logs = train_epoch.run(train_graphene_dataloader)
+        valid_logs = valid_epoch.run(val_graphene_dataloader)
+    
+        if max_score < valid_logs['iou_score']:
+            max_score = valid_logs['iou_score']
+            torch.save(model, './best_model.pth')
+            print('Model saved!')
+            
+        if i == 25:
+            optimizer.param_groups[0]['lr'] = 1e-5
+            print('Decrease decoder learning rate to 1e-5!')
 
     # Test
     best_model = torch.load('./best_model.pth')
@@ -117,12 +113,4 @@ if __name__ == '__main__':
         ax2.set_title("True mask")
         ax3.imshow(prediction_mask)
         ax3.set_title("Model's prediction")
-
-        # plt.figure()
-        # plt.imshow(np.array(image).reshape(96, 96))
-        # plt.figure()
-        # plt.imshow(np.array(label).reshape(96, 96))
-        # plt.figure()
-        # plt.imshow(reorder_arr(np.squeeze(prediction_mask), (96, 96, 3)))
-        # plt.imshow(np.array(prediction_mask).reshape(96, 96, 3))
         plt.show()
