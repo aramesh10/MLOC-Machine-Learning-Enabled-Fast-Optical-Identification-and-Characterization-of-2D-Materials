@@ -1,0 +1,6 @@
+# Machine Learning Enabled Fast Optical Identification and Characterization of 2D Materials (MLOC)
+Prof. Yingying Wu, yingyingwu@ufl.edu
+
+**Overview of MLOC project**
+
+  The goal of MLOC is to revolutionize the process of identifying and characterizing atomically thin 2D materials by leveraging the power of machine learning in conjunction with optical microscopy. The motivation behind this interdisciplinary approach stems from the growing importance of 2D materials in various technological applications and the inherent challenges in rapidly and accurately identifying these material layer numbers and understanding their properties. To achieve this goal, researchers employ machine learning algorithms trained on extensive datasets of optical signature from known 2D materials, utilizing these algorithms to automate the analysis and classification of unknown materials based on their optical properties. By combing the strengths of machine learning and optical techniques like Raman spectroscopy and photoluminescence, this approach aims to streamline the identification process, accelerate the material discovery, and facilitate the exploration of 2D devices for neuromorphic and quantum computing
