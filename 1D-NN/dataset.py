@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import matplotlib.image as img
-import matplotlib.pyplot as plt
 import albumentations as albu
 
 import torch
@@ -10,17 +9,14 @@ from torch.utils.data import Dataset
 from sklearn.preprocessing import normalize
 
 NUM_OF_CLASSES = 3
-SIZE = 32*3
 
 class GrapheneDataset(Dataset):
     
     def __init__(self, img_dir, label_dir, preprocess_bool=False):
         self.img = np.array([rgb2gray(img.imread(img_dir+image)) for image in os.listdir(img_dir) if os.path.isfile(img_dir+image)])  
-        self.img = self.img[:, :SIZE, :SIZE]
 
         if label_dir != None:
             self.label = np.array([img.imread(label_dir+label) for label in os.listdir(label_dir) if os.path.isfile(label_dir+label)])
-            self.label = self.label[:, :SIZE, :SIZE]
             assert(len(self.img) == len(self.label))
         else:
             self.label = None    
@@ -38,21 +34,17 @@ class GrapheneDataset(Dataset):
         image = self.img[idx]
         label = self.label[idx]
 
+
         # Image transformations
         if self.preprocess_bool:
+            # Image transformations
             image = self.transform(image=image)["image"]
             image = self.image_normalize(image=image)
         image = self.image_to_tensor(image=image)
 
         # Label transformations
         label = self.label_to_tensor(label=label)
-
-        # plt.figure()
-        # plt.imshow(image.squeeze())
-        # plt.figure()
-        # plt.imshow(label.squeeze())
-        # plt.show()
-
+        
         return (image, label)
 
     def preprocessing(self):
@@ -62,15 +54,14 @@ class GrapheneDataset(Dataset):
         return albu.Compose(transform)
 
     def image_to_tensor(self, image):
-        return torch.tensor(image).float().reshape(1, SIZE, SIZE)
+        return torch.tensor(image).float().reshape(1, image.shape[0], image.shape[1])
 
     def image_normalize(self, image):
-        # shape = image.shape
-        img_norm = normalize(image)#.reshape(shape)
+        img_norm = normalize(image)
         return img_norm
 
     def label_to_tensor(self, label):
-        return torch.tensor(255*label-1).reshape(1, SIZE, SIZE).to(torch.int64)
+        return torch.tensor(255*label-1).reshape(1, label.shape[0], label.shape[1]).to(torch.int64)
 
 def post_process_mask_prediction(prediction_mask):
     post_process_mask = reorder_arr(np.squeeze(prediction_mask), (96, 96, 3))
