@@ -8,6 +8,8 @@ from torch import nn
 from sklearn.preprocessing import normalize
 from sklearn.cluster import KMeans
 
+""" TODO: Total Color Difference (TCD) """
+
 def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
 
