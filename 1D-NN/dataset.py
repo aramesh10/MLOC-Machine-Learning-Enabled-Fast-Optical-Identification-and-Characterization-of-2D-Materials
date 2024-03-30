@@ -33,7 +33,7 @@ class GrapheneDataset(Dataset):
 
         # Image transformations
         if self.preprocessing_bool:
-            row = self.row_normalize(row=row)
+            row = self.row_normalize(row=row.reshape(-1, 1))
         row = self.row_to_tensor(row=row)
 
         # Label transformations
@@ -53,7 +53,7 @@ class GrapheneDataset(Dataset):
         return torch.tensor(row).float().reshape(1, row.shape[0])
 
     def row_normalize(self, row):
-        return normalize(row)
+        return normalize(row, axis=0)
 
     def label_to_tensor(self, label):
         return torch.tensor(label-1).reshape(label.shape[0]).to(torch.int64)

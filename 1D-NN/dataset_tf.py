@@ -30,7 +30,7 @@ class GrapheneDataset():
         # Pad to correct size
         row = self.rows[idx]
         label = self.labels[idx]
-        row = np.pad(row, (int((SIZE - row.size) / 2), int((SIZE - row.size) / 2)), 'constant', constant_values=0)
+        row = np.pad(row, (int((SIZE - row.size) / 2), int((SIZE - row.size) / 2)), 'constant', constant_values=0).astype(np.float32)
         label = np.pad(label, (int((SIZE - label.size) / 2), int((SIZE - label.size) / 2)), 'constant', constant_values=0)
         label = tf.one_hot(label, NUM_OF_CLASSES)
         return (row, label)
