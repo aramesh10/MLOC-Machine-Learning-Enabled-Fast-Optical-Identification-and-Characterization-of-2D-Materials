@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Read the image
 image = cv2.imread('7_data0005_normalized.jpg')
 enhanced_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -78,5 +77,3 @@ plt.ylabel('Frequency')
 plt.tight_layout()
 plt.show()
 #PLOT
-
-
