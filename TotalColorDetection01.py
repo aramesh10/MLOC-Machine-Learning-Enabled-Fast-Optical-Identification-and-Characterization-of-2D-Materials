@@ -2,51 +2,34 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Load the image
-image = cv2.imread('image2.png')
+# Read the image
+image = cv2.imread('7_data0005_normalized.jpg')
+enhanced_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-# Convert the image to grayscale
-gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-# Apply Gaussian blur to the grayscale image
-blurred_image = cv2.GaussianBlur(gray_image, (5, 5), 0)
-
-# Apply Contrast Limited Adaptive Histogram Equalization (CLAHE)
-clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-enhanced_image = clahe.apply(blurred_image)
-
-# Compute histogram for the enhanced image
+#find histogram
 hist = cv2.calcHist([enhanced_image], [0], None, [256], [0, 256])
-
-# Find peaks in the histogram
+#histogram peaks
 peaks = np.where(hist > np.max(hist) * 0.1)[0]  # Adjust the threshold (0.1) as needed
 
-hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
-# Calculate threshold values
+#define intensity levels based on histogram peaks
 low_intensity = np.min(peaks)
 high_intensity = np.max(peaks)
-
-# Define medium intensity levels (you may adjust these based on your specific requirements)
 medium_intensity_1 = low_intensity + (high_intensity - low_intensity) // 4
 medium_intensity_2 = low_intensity + (high_intensity - low_intensity) // 2
 medium_intensity_3 = low_intensity + 3 * (high_intensity - low_intensity) // 4
 
-# Define a color mapping function based on intensity
+#color mapping function based on intensity
 def map_intensity_to_color(intensity, low_intensity, medium_intensity_1, medium_intensity_2, medium_intensity_3, high_intensity):
-    # Map intensity levels to colors based on low, medium, and high intensity ranges
-    if intensity <= low_intensity:
-        return (153, 153, 255)  # Blue for low intensity
-    elif intensity < medium_intensity_1:
-        return (150, 255, 150)  # Green for medium intensity 1
-    elif intensity < medium_intensity_2:
-        return (255, 150, 150)  # Red for medium intensity 2
-    elif intensity < medium_intensity_3:
-        return (150, 255, 255)  # Yellow for medium intensity 3
+    if intensity >= low_intensity and intensity < medium_intensity_1:
+        return (0, 204, 255)  # Blue for low intensity
+    elif intensity >= medium_intensity_1 and intensity < medium_intensity_2:
+        return (51, 153, 102)  # Green for medium intensity 1
+    elif intensity >= medium_intensity_2 and intensity < medium_intensity_3:
+        return (128, 0, 0)  # Red for medium intensity 2
     else:
-        return (255, 255, 255)  # White for high intensity
+        return (128, 0, 128)  # purple for high intensity
 
-# Apply color mapping to each pixel of the enhanced grayscale image
+# Apply color mapping to each pixel
 colorized_image = np.zeros((enhanced_image.shape[0], enhanced_image.shape[1], 3), dtype=np.uint8)
 for y in range(enhanced_image.shape[0]):
     for x in range(enhanced_image.shape[1]):
@@ -54,9 +37,13 @@ for y in range(enhanced_image.shape[0]):
         color = map_intensity_to_color(intensity, low_intensity, medium_intensity_1, medium_intensity_2, medium_intensity_3, high_intensity)
         colorized_image[y, x] = color
 
+cv2.imshow('Colorized Image', colorized_image)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
 
 
 #PLOT
+hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 hue_hist = cv2.calcHist([hsv_image], [0], None, [180], [0, 180])
 saturation_hist = cv2.calcHist([hsv_image], [1], None, [256], [0, 256])
 value_hist = cv2.calcHist([hsv_image], [2], None, [256], [0, 256])
@@ -90,13 +77,6 @@ plt.ylabel('Frequency')
 
 plt.tight_layout()
 plt.show()
-
 #PLOT
-
-
-# Display the colorized image
-cv2.imshow('Colorized Image with Enhanced Contrast', colorized_image)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
 
 
