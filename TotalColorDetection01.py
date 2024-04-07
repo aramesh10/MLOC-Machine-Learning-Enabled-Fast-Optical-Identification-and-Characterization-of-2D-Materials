@@ -1,79 +1,75 @@
 import cv2
+import colour
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 
-image = cv2.imread('7_data0005_normalized.jpg')
-enhanced_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+image = cv2.imread('image3.png')
+lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)  # convert to l*a*b colorspace
 
-#find histogram
-hist = cv2.calcHist([enhanced_image], [0], None, [256], [0, 256])
-#histogram peaks
-peaks = np.where(hist > np.max(hist) * 0.1)[0]  # Adjust the threshold (0.1) as needed
+# measure substrate ~dynamically~
+region_percent = 0.2  # set row based on region % of image, 0.2 =  measure 20% from top
+row = int(lab_image.shape[0] * region_percent)
 
-#define intensity levels based on histogram peaks
-low_intensity = np.min(peaks)
-high_intensity = np.max(peaks)
-medium_intensity_1 = low_intensity + (high_intensity - low_intensity) // 4
-medium_intensity_2 = low_intensity + (high_intensity - low_intensity) // 2
-medium_intensity_3 = low_intensity + 3 * (high_intensity - low_intensity) // 4
+# measure l*a*b through given region
+horizontal_line = []
+for col in range(lab_image.shape[1]):
+    lab_values = lab_image[row, col]
+    horizontal_line.append(lab_values)
 
-#color mapping function based on intensity
-def map_intensity_to_color(intensity, low_intensity, medium_intensity_1, medium_intensity_2, medium_intensity_3, high_intensity):
-    if intensity >= low_intensity and intensity < medium_intensity_1:
-        return (0, 204, 255)  # Blue for low intensity
-    elif intensity >= medium_intensity_1 and intensity < medium_intensity_2:
-        return (51, 153, 102)  # Green for medium intensity 1
-    elif intensity >= medium_intensity_2 and intensity < medium_intensity_3:
-        return (128, 0, 0)  # Red for medium intensity 2
-    else:
-        return (128, 0, 128)  # purple for high intensity
+substrate_lab = np.mean(horizontal_line, axis=0)   # l*a*b mean of substrate
+# print("mean l*a*b along substrate row {}: {}".format(row, substrate_lab))
 
-# Apply color mapping to each pixel
-colorized_image = np.zeros((enhanced_image.shape[0], enhanced_image.shape[1], 3), dtype=np.uint8)
-for y in range(enhanced_image.shape[0]):
-    for x in range(enhanced_image.shape[1]):
-        intensity = enhanced_image[y, x]
-        color = map_intensity_to_color(intensity, low_intensity, medium_intensity_1, medium_intensity_2, medium_intensity_3, high_intensity)
-        colorized_image[y, x] = color
+# compute delta E for each pixel relative to substrate
+delta_e = np.linalg.norm(lab_image - substrate_lab, axis=2)
+normalized_delta_e = delta_e / np.max(delta_e) #important for visualization
 
-cv2.imshow('Colorized Image', colorized_image)
+#%%
+# Conversions
+# Perceptually Uniform Sequential Colormap
+colormap = matplotlib.colormaps['plasma']
+normalized_delta_e_rgb = colormap(normalized_delta_e)[:, :, :3]
+bgr_plasma = cv2.cvtColor((normalized_delta_e_rgb * 255).astype(np.uint8), cv2.COLOR_RGB2BGR)
+
+# hsv colormap
+colormap = matplotlib.colormaps['hsv']
+normalized_delta_e_rgb = colormap(normalized_delta_e)[:, :, :3]
+bgr_hsv = cv2.cvtColor((normalized_delta_e_rgb * 255).astype(np.uint8), cv2.COLOR_RGB2BGR)
+
+# Diverging Colormap
+colormap = matplotlib.colormaps['Spectral']
+normalized_delta_e_rgb = colormap(normalized_delta_e)[:, :, :3]
+bgr_spectral = cv2.cvtColor((normalized_delta_e_rgb * 255).astype(np.uint8), cv2.COLOR_RGB2BGR)
+
+# Display the delta E maps
+cv2.imshow('Original', image)
+cv2.imshow('DeltaE Map', (delta_e / np.max(delta_e) * 255).astype(np.uint8))
+cv2.imshow('DeltaE (Perceptually Uniform Sequential Colormap)', bgr_plasma)
+cv2.imshow('DeltaE (HSV)', bgr_hsv)
+cv2.imshow('DeltaE (Diverging Colormap)', bgr_spectral)
+
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
+#%%-------------------------------------------------------
+# may use this later, display map, plot the colors
 
-#PLOT
-hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-hue_hist = cv2.calcHist([hsv_image], [0], None, [180], [0, 180])
-saturation_hist = cv2.calcHist([hsv_image], [1], None, [256], [0, 256])
-value_hist = cv2.calcHist([hsv_image], [2], None, [256], [0, 256])
+# display the delta E map
+plt.imshow(normalized_delta_e, cmap='plasma')
+plt.colorbar(label='l*a*b* delta E')
+plt.title('ΔE Map')
+plt.show(block=True)
 
-# Plot histograms
-plt.figure(figsize=(15, 5))
-
-# Plot Hue histogram
-plt.subplot(1, 3, 1)
-plt.plot(hue_hist, color='b')
-plt.xlim([0, 180])
-plt.title('Histogram of Hue channel')
-plt.xlabel('Hue value')
-plt.ylabel('Frequency')
-
-# Plot Saturation histogram
-plt.subplot(1, 3, 2)
-plt.plot(saturation_hist, color='g')
-plt.xlim([0, 256])
-plt.title('Histogram of Saturation channel')
-plt.xlabel('Saturation value')
-plt.ylabel('Frequency')
-
-# Plot Value histogram
-plt.subplot(1, 3, 3)
-plt.plot(value_hist, color='r')
-plt.xlim([0, 256])
-plt.title('Histogram of Value channel')
-plt.xlabel('Value')
-plt.ylabel('Frequency')
-
-plt.tight_layout()
+# plot the colors
+# converts l*a*b* to XYZ then to xyz coordinates
+xyz = colour.sRGB_to_XYZ(lab_image / 255.0)
+lab_colour = colour.XYZ_to_Lab(xyz)
+# plot
+plt.figure(figsize=(8, 6))
+plt.scatter(lab_colour[:, 1], lab_colour[:, 2], c=lab_colour[:, 0], cmap='jet')
+plt.xlabel('a*')
+plt.ylabel('b*')
+plt.title('L*a*b* Color Space')
+plt.colorbar(label='L*')
+plt.grid(True)
 plt.show()
-#PLOT
