@@ -8,20 +8,12 @@ from torch import nn
 from sklearn.preprocessing import normalize
 from sklearn.cluster import KMeans
 
-""" TODO: Total Color Difference (TCD) """
-
 def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
 
 if __name__ == '__main__':
-    x_train_dir = './data/train/images/'
-    y_train_dir = './data/train/labels/'
-
-    x_val_dir = './data/val/images/'
-    y_val_dir = './data/val/labels/'
-
-    x_test_dir = './data/test/images/'
-    y_test_dir = './data/test/labels/'
+    x_train_dir = './data/filtered_dataset/train/images/'
+    y_train_dir = './data/filtered_dataset/train/labels/'
 
     # Get data
     x_train = np.array([rgb2gray(img.imread(x_train_dir+image)) for image in os.listdir(x_train_dir) if os.path.isfile(x_train_dir+image)])     # Shape: [N, W, H]
@@ -31,25 +23,31 @@ if __name__ == '__main__':
     x_train_row = np.reshape(x_train, (x_train.shape[0]*x_train.shape[2], x_train.shape[1])) # Shape: [N*H, W]
     y_train_row = np.reshape(y_train, (y_train.shape[0]*y_train.shape[2], y_train.shape[1])) # Shape: [N*H, W]
 
-    plt.figure()
-    plt.imshow(x_train[1])
-    plt.figure()
-    plt.imshow(y_train[1])
+    ROW = 20
+    for n in range(100):
+        n = np.random.choice(x_train.shape[0])
 
-    plt.figure()
-    plt.title("Pixel Intensity vs. Label")
-    plt.subplot(211)
-    plt.plot(range(x_train_row.shape[1]), x_train_row[180], label='Pixel Intensity')
-    plt.subplot(212)
-    plt.plot(range(y_train_row.shape[1]), y_train_row[180], label='Label')
-    plt.legend()
-    plt.show()
+        # fig, axes= plt.subplot_mosaic("ABEEE;CCEEE;DDEEE")
+        fig, axes= plt.subplot_mosaic("ACC;XDD;BEE")
+        plt.title("Pixel Intensity vs. Label")
+        axes['A'].imshow(x_train[n])
+        axes['A'].set_title("Image")
+        axes['B'].imshow(y_train[n])
+        axes['B'].set_title("Labels")
+        axes['C'].plot(range(x_train_row.shape[1]), x_train_row[(100*n)+ROW], label='Pixel Intensity')
+        axes['C'].set_title(f"Row {ROW} values")
+        axes['C'].set_ylabel("Intensity")
+        axes['D'].plot(range(y_train_row.shape[1]), y_train_row[(100*n)+ROW], label='Label')
+        axes['D'].set_title(f"Row {ROW} labels")
+        axes['D'].set_ylabel("Label")
 
-    x_train_norm = normalize(np.reshape(x_train, (x_train.shape[0], x_train.shape[1]*x_train.shape[2])))
-    x_train_all = normalize(x_train[1].flatten().reshape(1, -1))
-    y_train_all = y_train[1].flatten()
+        x_train_norm = normalize(np.reshape(x_train, (x_train.shape[0], x_train.shape[1]*x_train.shape[2])))
+        x_train_all  = normalize(x_train[1].flatten().reshape(1, -1))
+        y_train_all  = y_train[1].flatten()
 
-    plt.plot(x_train_all.reshape(-1,1), y_train_all, 'bo')
-    plt.show()
-
-    # kmeans_model = KMeans(n_clusters=2, random_state=0, n_init="auto").fit(X)
+        axes['E'].set_title('K-Means Clusters')
+        axes['E'].plot(x_train_all.reshape(-1,1), y_train_all, 'bo')
+        axes['E'].set_xlabel('Normalized pixel value')
+        axes['E'].set_ylabel('Label')
+        axes['X'].axis('off')
+        plt.show()
